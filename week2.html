@@ -1,0 +1,362 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>درس‌نامه هفته دوم - CS50</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans leading-relaxed">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">درس‌نامه هفته دوم: مبانی برنامه‌نویسی در C</h1>
+        <a href="index.html" class="text-blue-500 hover:underline mb-6 inline-block">بازگشت به صفحه اصلی</a>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <section>
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">خوش‌آمدگویی!</h2>
+                <p class="mb-4">در جلسه قبلی، ما با زبان برنامه‌نویسی C، یک زبان متنی، آشنا شدیم. این هفته، به بررسی عمیق‌تر بلوک‌های سازنده اضافی می‌پردازیم که به ما در یادگیری بیشتر برنامه‌نویسی از پایه کمک می‌کنند.</p>
+                <p class="mb-4">به طور اساسی، علاوه بر مبانی برنامه‌نویسی، این دوره درباره حل مسئله است. بنابراین، ما همچنین روی نحوه برخورد با مسائل علوم کامپیوتر تمرکز خواهیم کرد. تا پایان این دوره، شما یاد خواهید گرفت که چگونه از این بلوک‌های سازنده برای حل مجموعه‌ای از مسائل علوم کامپیوتر استفاده کنید.</p>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">سطوح خواندن</h2>
+                <p class="mb-4">یکی از مسائل واقعی که در این دوره حل خواهیم کرد، درک سطوح خواندن است. با کمک برخی از همکلاسی‌هایتان، ما متونی با سطوح خواندن مختلف ارائه کردیم. این هفته، ما سطوح خواندن را به عنوان یکی از چالش‌های برنامه‌نویسی شما کمی‌سازی خواهیم کرد.</p>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">کامپایل</h2>
+                <p class="mb-4">رمزنگاری عملی است برای مخفی کردن متن ساده از دید افراد غیرمجاز. رمزگشایی، در نتیجه، عملی است برای تبدیل متن رمزگذاری‌شده به شکلی قابل خواندن برای انسان. یک متن رمزگذاری‌شده ممکن است به این شکل باشد:</p>
+                <pre class="bg-gray-200 p-4 rounded">U  I  J  T   J  T   D  T  5  0</pre>
+                <p class="mb-4">هفته گذشته، شما با کامپایلر آشنا شدید، برنامه کامپیوتری خاصی که کد منبع را به کد ماشین قابل فهم برای کامپیوتر تبدیل می‌کند. به عنوان مثال، ممکن است برنامه‌ای به این شکل داشته باشید:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <stdio.h>
+
+int main(void)
+{
+    printf("hello, world\n");
+}
+                </pre>
+                <p class="mb-4">کامپایلر کد بالا را به کد ماشین تبدیل می‌کند. VS Code، محیط برنامه‌نویسی ارائه‌شده برای دانشجویان CS50، از کامپایلری به نام clang یا زبان C استفاده می‌کند. می‌توانید دستور زیر را در پنجره ترمینال وارد کنید تا کد خود را کامپایل کنید: <code>clang -o hello hello.c</code>.</p>
+                <p class="mb-4">اجرای <code>./hello</code> در پنجره ترمینال، برنامه شما را به صورت مورد انتظار اجرا می‌کند. کد زیر را از هفته گذشته در نظر بگیرید:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+
+int main(void)
+{
+    string name = get_string("What's your name? ");
+    printf("hello, %s\n", name);
+}
+                </pre>
+                <p class="mb-4">برای کامپایل این کد، می‌توانید <code>clang -o hello hello.c -lcs50</code> را تایپ کنید. اگر <code>make hello</code> را تایپ کنید، دستوری اجرا می‌شود که clang را برای ایجاد یک فایل خروجی قابل اجرا توسط کاربر اجرا می‌کند.</p>
+                <p class="mb-4">کامپایل شامل چهار مرحله اصلی است:</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li><strong>پیش‌پردازش</strong>: فایل‌های هدر (مانند cs50.h) به کد کپی می‌شوند.</li>
+                    <li><strong>کامپایل</strong>: کد به کد اسمبلی تبدیل می‌شود.</li>
+                    <li><strong>اسمبل</strong>: کد اسمبلی به کد ماشین تبدیل می‌شود.</li>
+                    <li><strong>لینک</strong>: کد از کتابخانه‌ها با کد شما ترکیب می‌شود.</li>
+                </ul>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">اشکال‌زدایی</h2>
+                <p class="mb-4">همه در هنگام کدنویسی اشتباه می‌کنند. اشکال‌زدایی فرآیند یافتن و حذف باگ‌ها از کد شما است. یکی از تکنیک‌های اشکال‌زدایی که در این دوره استفاده خواهید کرد، اشکال‌زدایی با اردک لاستیکی است، جایی که می‌توانید با یک شیء بی‌جان (یا خودتان) صحبت کنید تا به شما کمک کند درباره کدتان و دلیل کار نکردن آن فکر کنید.</p>
+                <p class="mb-4">کد زیر را در نظر بگیرید که عمداً یک باگ در آن قرار داده شده است:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <stdio.h>
+
+int main(void)
+{
+    for (int i = 0; i <= 3; i++)
+    {
+        printf("#\n");
+    }
+}
+                </pre>
+                <p class="mb-4">این کد چهار بلوک به جای سه بلوک چاپ می‌کند. می‌توانید با افزودن printf برای اشکال‌زدایی کد را اصلاح کنید:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <stdio.h>
+
+int main(void)
+{
+    for (int i = 0; i <= 3; i++)
+    {
+        printf("i is %i\n", i);
+        printf("#\n");
+    }
+}
+                </pre>
+                <p class="mb-4">اجرای این کد، چندین عبارت را خواهید دید، از جمله <code>i is 0</code>، <code>i is 1</code>، <code>i is 2</code> و <code>i is 3</code>. با دیدن این، ممکن است متوجه شوید که کد باید به این صورت اصلاح شود:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <stdio.h>
+
+int main(void)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        printf("#\n");
+    }
+}
+                </pre>
+                <p class="mb-4">ابزار دیگر اشکال‌زدایی، دیباگر VS Code است. می‌توانید یک نقطه توقف تنظیم کنید و <code>debug50 ./buggy0</code> را اجرا کنید تا کد را مرحله به مرحله بررسی کنید.</p>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">آرایه‌ها</h2>
+                <p class="mb-4">هر نوع داده به مقدار مشخصی از منابع سیستم نیاز دارد:</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>bool: 1 بایت</li>
+                    <li>int: 4 بایت</li>
+                    <li>long: 8 بایت</li>
+                    <li>float: 4 بایت</li>
+                    <li>double: 8 بایت</li>
+                    <li>char: 1 بایت</li>
+                    <li>string: ? بایت</li>
+                </ul>
+                <p class="mb-4">آرایه‌ها دنباله‌ای از مقادیر هستند که به صورت پشت سر هم در حافظه ذخیره می‌شوند. به عنوان مثال:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <stdio.h>
+
+int main(void)
+{
+    int score1 = 72;
+    int score2 = 73;
+    int score3 = 33;
+    printf("Average: %f\n", (score1 + score2 + score3) / 3.0);
+}
+                </pre>
+                <p class="mb-4">این کد را می‌توان با استفاده از آرایه بهبود داد:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+
+int main(void)
+{
+    int scores[3];
+    scores[0] = 72;
+    scores[1] = 73;
+    scores[2] = 33;
+    printf("Average: %f\n", (scores[0] + scores[1] + scores[2]) / 3.0);
+}
+                </pre>
+                <p class="mb-4">می‌توانیم با یک حلقه و تابع میانگین را ساده‌تر کنیم:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+
+const int N = 3;
+float average(int length, int array[]);
+
+int main(void)
+{
+    int scores[N];
+    for (int i = 0; i < N; i++)
+    {
+        scores[i] = get_int("Score: ");
+    }
+    printf("Average: %f\n", average(N, scores));
+}
+
+float average(int length, int array[])
+{
+    int sum = 0;
+    for (int i = 0; i < length; i++)
+    {
+        sum += array[i];
+    }
+    return sum / (float) length;
+}
+                </pre>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">رشته‌ها</h2>
+                <p class="mb-4">یک string به سادگی یک آرایه از متغیرهای نوع char است. به عنوان مثال:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <stdio.h>
+
+int main(void)
+{
+    char c1 = 'H';
+    char c2 = 'I';
+    char c3 = '!';
+    printf("%c%c%c\n", c1, c2, c3);
+}
+                </pre>
+                <p class="mb-4">با جایگزینی %c با %i، کدهای ASCII چاپ می‌شوند:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <stdio.h>
+
+int main(void)
+{
+    char c1 = 'H';
+    char c2 = 'I';
+    char c3 = '!';
+    printf("%i %i %i\n", c1, c2, c3);
+}
+                </pre>
+                <p class="mb-4">می‌توانیم رشته‌ها را به صورت آرایه‌ای از کاراکترها بررسی کنیم:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+
+int main(void)
+{
+    string s = "HI!";
+    printf("%c%c%c\n", s[0], s[1], s[2]);
+}
+                </pre>
+                <p class="mb-4">برای محاسبه طول یک رشته:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+
+int main(void)
+{
+    string name = get_string("Name: ");
+    int n = 0;
+    while (name[n] != '\0')
+    {
+        n++;
+    }
+    printf("%i\n", n);
+}
+                </pre>
+                <p class="mb-4">یا با استفاده از کتابخانه string.h:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    string name = get_string("Name: ");
+    int length = strlen(name);
+    printf("%i\n", length);
+}
+                </pre>
+                <p class="mb-4">برای تبدیل کاراکترهای کوچک به بزرگ:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    string s = get_string("Before: ");
+    printf("After:  ");
+    for (int i = 0, n = strlen(s); i < n; i++)
+    {
+        printf("%c", toupper(s[i]));
+    }
+    printf("\n");
+}
+                </pre>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">آرگومان‌های خط فرمان</h2>
+                <p class="mb-4">آرگومان‌های خط فرمان به برنامه منتقل می‌شوند:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+
+int main(int argc, string argv[])
+{
+    if (argc == 2)
+    {
+        printf("hello, %s\n", argv[1]);
+    }
+    else
+    {
+        printf("hello, world\n");
+    }
+}
+                </pre>
+                <p class="mb-4">اجرای <code>./greet David</code> باعث می‌شود برنامه بگوید <code>hello, David</code>.</p>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">وضعیت خروج</h2>
+                <p class="mb-4">وقتی یک برنامه پایان می‌یابد، یک کد خروج ارائه می‌شود:</p>
+                <pre class="bg-gray-200 p-4 rounded">
+#include <cs50.h>
+#include <stdio.h>
+
+int main(int argc, string argv[])
+{
+    if (argc != 2)
+    {
+        printf("Missing command-line argument\n");
+        return 1;
+    }
+    printf("hello, %s\n", argv[1]);
+    return 0;
+}
+                </pre>
+                <p class="mb-4">می‌توانید <code>echo $?</code> را در ترمینال تایپ کنید تا وضعیت خروج را ببینید.</p>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">رمزنگاری</h2>
+                <p class="mb-4">رمزنگاری هنر رمزگذاری و رمزگشایی یک پیام است. plaintext و یک key به یک cipher ارائه می‌شوند، که منجر به متن رمزگذاری‌شده می‌شود.</p>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">جمع‌بندی</h2>
+                <p class="mb-4">در این درس، شما جزئیات بیشتری در مورد کامپایل و نحوه ذخیره داده‌ها در کامپیوتر یاد گرفتید. به طور خاص، شما آموختید:</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>نحوه کار یک کامپایلر.</li>
+                    <li>چگونه کد خود را با استفاده از چهار روش اشکال‌زدایی کنید.</li>
+                    <li>چگونه از آرایه‌ها در کد خود استفاده کنید.</li>
+                    <li>چگونه آرایه‌ها داده‌ها را در بخش‌های پشت سر هم حافظه ذخیره می‌کنند.</li>
+                    <li>چگونه رشته‌ها به سادگی آرایه‌هایی از کاراکترها هستند.</li>
+                    <li>چگونه با آرایه‌ها در کد خود تعامل کنید.</li>
+                    <li>چگونه آرگومان‌های خط فرمان می‌توانند به برنامه‌های شما منتقل شوند.</li>
+                    <li>بلوک‌های سازنده اساسی رمزنگاری.</li>
+                </ul>
+                <p class="mt-4">تا جلسه بعدی!</p>
+            </section>
+        </div>
+    </div>
+</body>
+</html>
