@@ -1,62 +1,140 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>درس‌نامه‌های CS50</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Vazir', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .navbar-brand img {
+            height: 40px;
+            margin-left: 10px;
+        }
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        footer {
+            background-color: #343a40;
+            color: white;
+            padding: 20px 0;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans leading-relaxed">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center text-blue-600 mb-6">درس‌نامه‌های CS50</h1>
-        <p class="text-lg text-gray-700 mb-8 text-center">
-            خوش آمدید به درس‌نامه‌های CS50! این صفحه شامل فهرستی از درس‌نامه‌های دوره علوم کامپیوتر CS50 است. برای مطالعه جزئیات هر درس‌نامه، روی لینک مربوطه کلیک کنید.
-        </p>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="https://cs50.harvard.edu/x/2025/assets/logo.png" alt="CS50 Logo">
+                درس‌نامه‌های CS50
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="index.html">صفحه اصلی</a></li>
+                    <li class="nav-item"><a class="nav-link" href="week0.html">درس‌نامه صفر</a></li>
+                    <li class="nav-item"><a class="nav-link" href="week2.html">هفته دوم</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-        <h2 class="text-2xl font-semibold text-gray-800 mb-4">فهرست درس‌نامه‌ها</h2>
-        <ul class="list-disc list-inside space-y-4 text-lg text-gray-700">
-            <li><a href="week0.html" class="text-blue-500 hover:underline">درس‌نامه صفر: مقدمه‌ای بر علوم کامپیوتر و برنامه‌نویسی</a></li>
-            <li><a href="week2.html" class="text-blue-500 hover:underline">درس‌نامه هفته دوم: مبانی برنامه‌نویسی در C</a></li>
-        </ul>
+    <!-- Main Content -->
+    <div class="container py-5 fade-in">
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-primary">درس‌نامه‌های CS50</h1>
+            <p class="lead text-muted">
+                خوش آمدید به درس‌نامه‌های CS50! این صفحه شامل فهرستی از درس‌نامه‌های دوره علوم کامپیوتر CS50 است که به شما کمک می‌کند مفاهیم برنامه‌نویسی و حل مسئله را به صورت گام به گام یاد بگیرید. برای مطالعه جزئیات هر درس‌نامه، روی لینک مربوطه کلیک کنید.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title text-primary">درس‌نامه صفر</h3>
+                        <p class="card-text">مقدمه‌ای بر علوم کامپیوتر و برنامه‌نویسی با استفاده از اسکرچ، شامل مفاهیم باینری، ASCII، الگوریتم‌ها و شبه‌کد.</p>
+                        <a href="week0.html" class="btn btn-primary">مشاهده درس‌نامه</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title text-primary">هفته دوم</h3>
+                        <p class="card-text">مبانی برنامه‌نویسی در زبان C، شامل کامپایل، اشکال‌زدایی، آرایه‌ها، رشته‌ها و رمزنگاری.</p>
+                        <a href="week2.html" class="btn btn-primary">مشاهده درس‌نامه</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="container">
+            <p class="mb-2">© 2025 درس‌نامه‌های CS50 | طراحی‌شده با ❤️ برای یادگیری علوم کامپیوتر</p>
+            <div>
+                <a href="https://cs50.harvard.edu" class="text-white mx-2"><i class="bi bi-globe"></i> وب‌سایت CS50</a>
+                <a href="https://twitter.com/cs50" class="text-white mx-2"><i class="bi bi-twitter"></i> توییتر</a>
+                <a href="https://github.com/cs50" class="text-white mx-2"><i class="bi bi-github"></i> گیت‌هاب</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Theme Toggle Button -->
+    <button class="btn btn-secondary theme-toggle" onclick="toggleTheme()">
+        <i class="bi bi-moon-stars-fill"></i> تغییر تم
+    </button>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('bg-dark');
+            document.body.classList.toggle('text-white');
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.classList.toggle('bg-dark');
+                card.classList.toggle('text-white');
+            });
+            const footer = document.querySelector('footer');
+            footer.classList.toggle('bg-light');
+            footer.classList.toggle('text-dark');
+        }
+    </script>
 </body>
 </html>
